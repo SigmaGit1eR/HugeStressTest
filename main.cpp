@@ -1,4 +1,3 @@
-// huge_stress_test.cpp
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -8,7 +7,6 @@
 #include <atomic>
 #include <chrono>
 
-// --- OpenGL шейдери ---
 
 const char* vertexShaderSource = R"(
 #version 330 core
@@ -39,7 +37,6 @@ void main() {
 }
 )";
 
-// --- Функція для компіляції шейдерів та перевірки помилок ---
 
 void checkCompileErrors(unsigned int shader, std::string type) {
     int success;
@@ -62,14 +59,12 @@ void checkCompileErrors(unsigned int shader, std::string type) {
     }
 }
 
-// --- CPU навантаження ---
 
 std::atomic<bool> cpuLoadRunning(true);
 
 void cpuLoadThread() {
     volatile double x = 0.0;
     while (cpuLoadRunning) {
-        // Важкі обчислення
         for (int i = 0; i < 1000000; ++i) {
             x += sin(i) * cos(i * 1.001);
             x = fmod(x, 1000.0);
@@ -77,7 +72,6 @@ void cpuLoadThread() {
     }
 }
 
-// --- RAM навантаження ---
 
 std::atomic<bool> ramLoadRunning(true);
 
@@ -85,7 +79,7 @@ void ramLoadThread() {
     std::vector<char*> allocations;
     try {
         while (ramLoadRunning) {
-            // Виділяємо по 10 МБ кожні 100 мс
+           
             char* block = new char[10 * 1024 * 1024];
             allocations.push_back(block);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -93,21 +87,21 @@ void ramLoadThread() {
     }
     catch (std::bad_alloc&) {
         std::cerr << "Out of memory (RAM stress test)" << std::endl;
-        // Залишаємо всі виділення для утримання пам'яті
+       
         while (true) std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 }
 
-// --- OpenGL (GPU) налаштування та рендер ---
+
 
 int main() {
-    // Запускаємо CPU навантаження в окремому потоці
+    
     std::thread cpuThread(cpuLoadThread);
 
-    // Запускаємо RAM навантаження в окремому потоці
+   
     std::thread ramThread(ramLoadThread);
 
-    // Ініціалізація GLFW
+   
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW\n";
         cpuLoadRunning = false;
@@ -117,7 +111,7 @@ int main() {
         return -1;
     }
 
-    // Повноекранне вікно на головному моніторі
+   
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
 
@@ -149,7 +143,7 @@ int main() {
         return -1;
     }
 
-    // Створення шейдерів
+  
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
     glCompileShader(vertexShader);
@@ -169,7 +163,7 @@ int main() {
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    // Квадрат для повного екрану
+ 
     float vertices[] = {
         -1.0f,  1.0f,
         -1.0f, -1.0f,
@@ -190,7 +184,6 @@ int main() {
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    // Рендер цикл
     while (!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT);
 
@@ -202,7 +195,6 @@ int main() {
         glfwPollEvents();
     }
 
-    // Зупинка навантажень
     cpuLoadRunning = false;
     ramLoadRunning = false;
 
